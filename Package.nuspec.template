@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package>
+    <metadata>
+        <id>${NUGET_ID}</id>
+        <version>${VERSION_FULL}</version>
+        <title>${NUGET_TITLE}</title>
+        <authors>${AUTHORS}</authors>
+        <projectUrl>${PROJECT_URL}</projectUrl>
+        <requireLicenseAcceptance>${NUGET_REQUIRESLICENSEACCEPTANCE}</requireLicenseAcceptance>
+        <description>${DESCRIPTION}</description>
+        <developmentDependency>true</developmentDependency>
+    </metadata>
+
+    <files>
+        <!-- ProjectAsPackageReference Tool -->
+        <file src="tools/InstallPackage.sh" target="tools/InstallPackage.sh" />
+        <file src="tools/InstallPackage.ps1" target="tools/InstallPackage.ps1" />
+        <!-- Targets -->
+        <file src="build/ProjectAsPackageReference.props" target="build/ProjectAsPackageReference.props" />
+        <file src="build/ProjectAsPackageReference.targets" target="build/ProjectAsPackageReference.targets" />
+    </files>
+</package>

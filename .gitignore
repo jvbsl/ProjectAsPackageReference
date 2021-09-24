@@ -1,0 +1,7 @@
+tmp/
+output/
+Test/**/obj/*
+Test/**/bin/*
+
+
+Package.nuspec

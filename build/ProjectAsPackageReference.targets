@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ScriptExe Condition="'$(OS)' == 'Windows_NT'" >@"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -InputFormat None -ExecutionPolicy Bypass</ScriptExe>
+        <ScriptExe Condition="'$(OS)' != 'Windows_NT'" >bash</ScriptExe>
+        <ScriptPrefix Condition="'$(OS)' == 'Windows_NT'" >&quot;&amp;</ScriptPrefix>
+        <ScriptPostfix  Condition="'$(OS)' == 'Windows_NT'" >&quot;</ScriptPostfix>
+
+        <ScriptFileEnding Condition="'$(OS)' == 'Windows_NT'" >.ps1</ScriptFileEnding>
+        <ScriptFileEnding Condition="'$(OS)' != 'Windows_NT'" >.sh</ScriptFileEnding>
+
+        <LocalPackageResolver>$(ScriptExe) $(ScriptPrefix) '$(MSBuildThisFileDirectory)../tools/InstallPackage$(ScriptFileEnding)'</LocalPackageResolver>
+    </PropertyGroup>
+    <Target Name="ResolveLocalPackages" BeforeTargets="_GenerateRestoreGraphProjectEntry" Outputs="%(ProjectAsPackageReference.Identity)" Condition="'@(ProjectAsPackageReference)'==''">
+        <Exec Command="$(LocalPackageResolver) %(ProjectAsPackageReference.Identity)" ConsoleToMSBuild="true">
+            <Output TaskParameter="ConsoleOutput" PropertyName="OutputOfExec" />
+        </Exec>
+        <Error Text="Failed to include %(ProjectAsPackageReference.Identity) project as a PackageReference." Condition="'$(OutputOfExec)'==''" />
+        <CreateProperty Value="$([System.String]::new('$(OutputOfExec)').Split(';', 2)[0])" >
+            <Output TaskParameter="Value" PropertyName="LocalNugetPackage" />
+        </CreateProperty>
+        <CreateProperty Value="$([System.String]::new('$(OutputOfExec)').Split(';', 2)[1])" >
+            <Output TaskParameter="Value" PropertyName="LocalNugetVersion" />
+        </CreateProperty>
+        <CreateProperty Value="$([System.IO.Path]::GetFileName($(LocalNugetPackage)))">
+            <Output TaskParameter="Value" PropertyName="LocalNugetFile" />
+        </CreateProperty>
+        <CreateProperty Value="$([System.IO.Path]::GetDirectoryName($(LocalNugetPackage)))">
+            <Output TaskParameter="Value" PropertyName="LocalNugetDirectory" />
+        </CreateProperty>
+        <CreateProperty Value="$(RestoreSources);$(LocalNugetDirectory)">
+            <Output TaskParameter="Value" PropertyName="RestoreSources" />
+        </CreateProperty>
+        <CreateProperty Value="$(LocalNugetFile.Substring(0, $([MSBuild]::Subtract($([MSBuild]::Subtract($(LocalNugetFile.Length), 7)),$(LocalNugetVersion.Length)))))">
+            <Output TaskParameter="Value" PropertyName="LocalNugetName" />
+        </CreateProperty>
+        
+        <!--<Warning Text="Trying to install nuget package '$(LocalNugetName)' version '$(LocalNugetVersion)' at location '$(LocalNugetDirectory)'" />-->
+        <ItemGroup>
+            <PackageReference Include="$(LocalNugetName)" Version="$(LocalNugetVersion)"/>
+        </ItemGroup>
+        
+    </Target>
+</Project>

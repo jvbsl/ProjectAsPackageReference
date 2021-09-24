@@ -1,0 +1,30 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - master
+      - develop
+  pull_request:
+jobs:
+  build:
+    env:
+        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix: 
+        os: [ubuntu-latest]
+
+    steps:
+    - uses: actions/checkout@v1
+    - uses: jvbsl/litgit-action@master
+    - name: Build
+      run: ./build.sh
+    - name: Run tests
+      run: dotnet build Test/Test.csproj
+      working-directory: Test
+      shell: bash
+    - name: Deploy Nuget Package
+      run: ./tools/nuget push ./output/*.nupkg -ApiKey $NUGET_API_KEY -Source https://api.nuget.org/v3/index.json -SkipDuplicate
+      shell: bash
+      if: github.event_name != 'pull_request'

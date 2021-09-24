@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFramework>net5.0</TargetFramework>
+    <PackageVersion>1.0.0-notwhatyouwant</PackageVersion>
+  </PropertyGroup>
+  <Target Name="Something" BeforeTargets="BeforeBuild;PreBuildEvent">
+    <PropertyGroup>
+    
+    <PackageVersion>1.0.0-notwhatyouwant2</PackageVersion>
+    </PropertyGroup>
+  </Target>
+</Project>
