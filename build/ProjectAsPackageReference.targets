@@ -11,7 +11,7 @@
 
         <LocalPackageResolver>$(ScriptExe) $(ScriptPrefix) '$(MSBuildThisFileDirectory)../tools/InstallPackage$(ScriptFileEnding)'</LocalPackageResolver>
     </PropertyGroup>
-    <Target Name="ResolveLocalPackages" BeforeTargets="_GenerateRestoreGraphProjectEntry" Outputs="%(ProjectAsPackageReference.Identity)" Condition="'@(ProjectAsPackageReference)'==''">
+    <Target Name="ResolveLocalPackages" BeforeTargets="_GenerateRestoreGraphProjectEntry" Outputs="%(ProjectAsPackageReference.Identity)" Condition="'@(ProjectAsPackageReference)'!=''">
         <Exec Command="$(LocalPackageResolver) %(ProjectAsPackageReference.Identity)" ConsoleToMSBuild="true">
             <Output TaskParameter="ConsoleOutput" PropertyName="OutputOfExec" />
         </Exec>
