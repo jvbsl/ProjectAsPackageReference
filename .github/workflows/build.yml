@@ -17,7 +17,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
-    - uses: jvbsl/litgit-action@feature/test
+    - uses: jvbsl/litgit-action@master
     - name: Build
       run: ./build.sh
     - name: Run tests
