@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <package>
     <metadata>
-        <id>${NUGET_ID}</id>
+        <id>${PRODUCT}</id>
         <version>${VERSION_FULL}</version>
-        <title>${NUGET_TITLE}</title>
+        <title>${PRODUCT}</title>
         <authors>${AUTHORS}</authors>
         <projectUrl>${PROJECT_URL}</projectUrl>
-        <requireLicenseAcceptance>${NUGET_REQUIRESLICENSEACCEPTANCE}</requireLicenseAcceptance>
-        <description>${DESCRIPTION}</description>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <description>Adds capability to MSBuild to be able to include a csproj as a nuget package reference built on the fly.</description>
         <developmentDependency>true</developmentDependency>
     </metadata>
 
