@@ -5,7 +5,7 @@ namespace SimpleReference
     {
         public static void PrintSomething()
         {
-            Console.WriteLine("Something differentasdf");
+            Console.WriteLine("Something different");
         }
     }
 }
