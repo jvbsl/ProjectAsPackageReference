@@ -48,7 +48,6 @@ installPackage() {
     PACKAGE_FULLNAME="${PACKAGE_FULLNAME%.nupkg}"
     PACKAGE_VERSION=$(echo "$PACKAGE_FULLNAME" | grep -oP '[0-9](.[0-9])*(\-.*)*')
     PACKAGE_NAME=${PACKAGE_FULLNAME%\.${PACKAGE_VERSION}}
-    PACKAGE_HASH=$(openssl dgst -binary -sha512 "/tmp/LocalPackageReferences/$PACKAGE_NAME.$PACKAGE_VERSION-packageref.nupkg" | openssl base64 -A)
     if [ "$IS_NEW" = true ] ; then
         patchVersion "$PACKAGE" "$PACKAGE_NAME" "$PACKAGE_VERSION"
     else
@@ -56,6 +55,7 @@ installPackage() {
         PACKAGE="$PATCHED_PACKAGE_PATH"
         PACKAGE_VERSION="$PACKAGE_VERSION-packageref"
     fi
+    PACKAGE_HASH=$(openssl dgst -binary -sha512 "/tmp/LocalPackageReferences/$PACKAGE_NAME.$PACKAGE_VERSION-packageref.nupkg" | openssl base64 -A)
     #NEW_PACKAGE_PATH="$(dirname "$PACKAGE")/$PACKAGE_NAME.$PACKAGE_VERSION-localPackage"
     #mv "$PACKAGE" "$NEW_PACKAGE_PATH"
 
