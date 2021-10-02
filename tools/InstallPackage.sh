@@ -52,9 +52,9 @@ installPackage() {
     if [ "$IS_NEW" = true ] ; then
         patchVersion "$PACKAGE" "$PACKAGE_NAME" "$PACKAGE_VERSION"
     else
-        patchedPath
-        $PACKAGE="$PATCHED_PACKAGE_PATH"
-        $PACKAGE_VERSION="$PACKAGE_VERSION-packageref"
+        patchedPath "$PACKAGE"
+        PACKAGE="$PATCHED_PACKAGE_PATH"
+        PACKAGE_VERSION="$PACKAGE_VERSION-packageref"
     fi
     #NEW_PACKAGE_PATH="$(dirname "$PACKAGE")/$PACKAGE_NAME.$PACKAGE_VERSION-localPackage"
     #mv "$PACKAGE" "$NEW_PACKAGE_PATH"
