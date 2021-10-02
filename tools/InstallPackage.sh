@@ -48,10 +48,10 @@ installPackage() {
     PACKAGE_FULLNAME="${PACKAGE_FULLNAME%.nupkg}"
     PACKAGE_VERSION=$(echo "$PACKAGE_FULLNAME" | grep -oP '[0-9](.[0-9])*(\-.*)*')
     PACKAGE_NAME=${PACKAGE_FULLNAME%\.${PACKAGE_VERSION}}
-    if [ "$IS_NEW" = true ] ; then
+    patchedPath "$PACKAGE"
+    if [ "$IS_NEW" = true -o ! -f "$PATCHED_PACKAGE_PATH" ] ; then
         patchVersion "$PACKAGE" "$PACKAGE_NAME" "$PACKAGE_VERSION"
     else
-        patchedPath "$PACKAGE"
         PACKAGE="$PATCHED_PACKAGE_PATH"
         PACKAGE_VERSION="$PACKAGE_VERSION-packageref"
     fi
@@ -88,14 +88,14 @@ LC_ALL=en dotnet pack "$1" -o /tmp/LocalPackageReferences -v detailed --configur
 # echo $TEMP_BUILD_FILE
 PACKAGE_SUCCESS=$(grep -oP "(?<=Successfully created package ').*(?='.)" "$TEMP_BUILD_FILE")
 if [ -f "$PACKAGE_SUCCESS" ]; then
-    installPackage $PACKAGE_SUCCESS
+    installPackage $PACKAGE_SUCCESS true
 else
     IS_OUTPUT_FILE=false
     while IFS= read -r line
     do
         PACKAGE_CREATED=$(trim $(echo "$line"))
         if [ -f "$PACKAGE_CREATED" ]; then
-            installPackage $PACKAGE_CREATED
+            installPackage $PACKAGE_CREATED false
         fi
     done < <(awk '/^(       )Output files: $/{flag=1;next}!/^(       ).*/{flag=0;next}flag{if ($1 ~ /\.nupkg/){ print $1; }}' "$TEMP_BUILD_FILE")
 
