@@ -55,7 +55,7 @@ installPackage() {
         PACKAGE="$PATCHED_PACKAGE_PATH"
         PACKAGE_VERSION="$PACKAGE_VERSION-packageref"
     fi
-    PACKAGE_HASH=$(openssl dgst -binary -sha512 "/tmp/LocalPackageReferences/$PACKAGE_NAME.$PACKAGE_VERSION-packageref.nupkg" | openssl base64 -A)
+    PACKAGE_HASH=$(openssl dgst -binary -sha512 "/tmp/LocalPackageReferences/$PACKAGE_NAME.$PACKAGE_VERSION.nupkg" | openssl base64 -A)
     #NEW_PACKAGE_PATH="$(dirname "$PACKAGE")/$PACKAGE_NAME.$PACKAGE_VERSION-localPackage"
     #mv "$PACKAGE" "$NEW_PACKAGE_PATH"
 
