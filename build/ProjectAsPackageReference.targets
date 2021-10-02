@@ -10,18 +10,19 @@
         <ScriptFileEnding Condition="'$(OS)' != 'Windows_NT'" >.sh</ScriptFileEnding>
 
         <LocalPackageResolver>$(ScriptExe) $(ScriptPrefix) '$(MSBuildThisFileDirectory)../tools/InstallPackage$(ScriptFileEnding)'</LocalPackageResolver>
-        <RestoreSources>$([System.IO.Path]::GetTempPath())/LocalPackageReferences;$(RestoreSources)</RestoreSources>
-        
+        <!--<RestoreSources>$(RestoreSources);$([System.IO.Path]::GetTempPath())/LocalPackageReferences</RestoreSources>-->
+      <RestoreAdditionalProjectSources>$(RestoreAdditionalProjectSources);$([System.IO.Path]::GetTempPath())/LocalPackageReferences</RestoreAdditionalProjectSources>
         
     </PropertyGroup>
     <Target Name="ResolveLocalPackages" BeforeTargets="_GenerateRestoreGraphProjectEntry" Condition="'@(ProjectAsPackageReference)'!='' AND '@(ResolvedProjectAsPackageReference)' != '@(ProjectAsPackageReference)'" Inputs="@(ProjectAsPackageReference)" Outputs="__%(Identity).__DUMMY__">
         <PropertyGroup>
             <OutputOfExec></OutputOfExec>
+          <AbsoluteProjectRefPath>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)/%(ProjectAsPackageReference.Identity)'))</AbsoluteProjectRefPath>
         </PropertyGroup>
-        <Exec Command="$(LocalPackageResolver) %(ProjectAsPackageReference.Identity)" ConsoleToMSBuild="true">
+        <Exec Command="$(LocalPackageResolver) $(AbsoluteProjectRefPath)" ConsoleToMSBuild="true">
             <Output TaskParameter="ConsoleOutput" PropertyName="OutputOfExec" />
         </Exec>
-        <Error Text="Failed to include %(ProjectAsPackageReference.Identity) project as a PackageReference." Condition="'$(OutputOfExec)'==''" />
+        <Error Text="Failed to include $(AbsoluteProjectRefPath) project as a PackageReference." Condition="'$(OutputOfExec)'==''" />
         
         <PropertyGroup>
             <LocalNugetPackage>$([System.String]::new('$(OutputOfExec)').Split(';', 2)[0].Trim())</LocalNugetPackage>
@@ -34,7 +35,7 @@
             <LocalNugetName>$(LocalNugetFile.Substring(0, $([MSBuild]::Subtract($([MSBuild]::Subtract($(LocalNugetFile.Length), 7)),$(LocalNugetVersion.Length)))))</LocalNugetName>
         </PropertyGroup>
         
-<Warning Text="Trying to install nuget package '$(LocalNugetName)' version '$(LocalNugetVersion)' at location '$(LocalNugetDirectory)'" />
+<Warning Text="Trying to install nuget package '$(LocalNugetName)' version '$(LocalNugetVersion)' at location '$(LocalNugetDirectory)' from $(RestoreAdditionalProjectSources)" />
         <!--<Warning Text="Trying to install nuget package '$(LocalNugetName)' version '$(LocalNugetVersion)' at location '$(LocalNugetDirectory)'" />-->
         <ItemGroup>
             <PackageReference Include="$(LocalNugetName)" Version="$(LocalNugetVersion)"/>
@@ -43,6 +44,7 @@
     </Target>
     <Target Name="CheckResolved" BeforeTargets="CoreCompile" DependsOnTargets="ResolveLocalPackages" Condition="'@(ResolvedProjectAsPackageReference)' != '@(ProjectAsPackageReference)'">
         
+<Warning Text="Sources: $(RestoreAdditionalProjectSources)" />
         <PropertyGroup>
             <_LocalNugetPackageResolved Condition="'@(ResolvedProjectAsPackageReference)' == '@(ProjectAsPackageReference)'">true</_LocalNugetPackageResolved>
             <_LocalNugetPackageResolved Condition="'@(ResolvedProjectAsPackageReference)' != '@(ProjectAsPackageReference)'" >false</_LocalNugetPackageResolved>

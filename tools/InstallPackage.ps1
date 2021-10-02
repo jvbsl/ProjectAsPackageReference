@@ -103,13 +103,22 @@ function ValueOrDefault {
 
 function installPackage {
     param(
-        [string] $Package
+        [string] $Package,
+        [bool] $IsNew
     )
     $PACKAGE="$Package"
     $PACKAGE_FULLNAME=[System.IO.Path]::GetFileNameWithoutExtension($PACKAGE) #.TrimEnd(".symbols")
 
     $PACKAGE_VERSION=("$PACKAGE_FULLNAME" | Select-String -Pattern "[0-9](.[0-9])*(\-.*)*").Matches[0].Captures.Value
     $PACKAGE_NAME=$PACKAGE_FULLNAME.TrimEnd($PACKAGE_VERSION)
+    $PATCHED_PATH=patchPath -Package $PACKAGE
+    if($IsNew -Or !(Test-Path -Path $PATCHED_PATH)) {
+        patchVersion -Package ([ref]$PACKAGE) -PackageName $PACKAGE_NAME -PackageVersion ([ref]$PACKAGE_VERSION)
+    } else {
+        $PACKAGE=$PATCHED_PATH
+        $PACKAGE_VERSION="$PACKAGE_VERSION-packageref"
+    }
+    
     $PACKAGE_HASH=base64sha512 -Path "$PACKAGE"
     #NEW_PACKAGE_PATH="$(dirname "$PACKAGE")/$PACKAGE_NAME.$PACKAGE_VERSION-localPackage"
     #mv "$PACKAGE" "$NEW_PACKAGE_PATH"
@@ -118,22 +127,6 @@ function installPackage {
 
     $PACKAGES_DIR=Join-Path -Path $GLOBAL_PACKAGE_DIR -ChildPath $PACKAGE_NAME.ToLower()
     if (Test-Path -Path "$PACKAGES_DIR" -PathType "Container") {
-        $PACKAGE_VERSION_DIR_REF=Join-Path -Path $PACKAGES_DIR -ChildPath "$PACKAGE_VERSION-packageref"
-        if (Test-Path -Path "$PACKAGE_VERSION_DIR_REF" -PathType Container) {
-            $INSTALLED_PACKAGE_HASH_FILE=Join-Path -Path "$PACKAGE_VERSION_DIR_REF" -ChildPath "$PACKAGE_NAME.$PACKAGE_VERSION.packageref.nupkg.sha512"
-            
-            $INSTALLED_PACKAGE_HASH=ValueOrDefault (Get-Content -Raw -Path "$INSTALLED_PACKAGE_HASH_FILE" -ErrorAction SilentlyContinue) ("")
-            
-            if ("$INSTALLED_PACKAGE_HASH" -ne "$PACKAGE_HASH") {
-                $null = Remove-Item -LiteralPath "$PACKAGE_VERSION_DIR_REF" -Force -Recurse -ErrorAction SilentlyContinue
-            } else {
-                
-                $PACKAGE=patchPath -Package $PACKAGE
-                $PACKAGE_VERSION="$PACKAGE_VERSION-packageref"
-                echoResult -Package $PACKAGE -PackageVersion $PACKAGE_VERSION
-                return
-            }
-        }
         $PACKAGE_VERSION_DIR=Join-Path -Path "$PACKAGES_DIR" -ChildPath "$PACKAGE_VERSION"
         if (Test-Path -Path "$PACKAGE_VERSION_DIR" -PathType Container) {
             $INSTALLED_PACKAGE_HASH_FILE=Join-Path -Path "$PACKAGE_VERSION_DIR" -ChildPath "$PACKAGE_NAME.$PACKAGE_VERSION.nupkg.sha512"
@@ -142,13 +135,9 @@ function installPackage {
             
             if ("$INSTALLED_PACKAGE_HASH" -ne "$PACKAGE_HASH") {
                 $null = Remove-Item -LiteralPath "$PACKAGE_VERSION_DIR" -Force -Recurse -ErrorAction SilentlyContinue
-            } else {
-                echoResult -Package $PACKAGE -PackageVersion $PACKAGE_VERSION
-                return
             }
         }
     }
-    patchVersion -Package ([ref]$PACKAGE) -PackageName $PACKAGE_NAME -PackageVersion ([ref]$PACKAGE_VERSION)
     echoResult -Package $PACKAGE -PackageVersion $PACKAGE_VERSION
 }
 #rm -rf /tmp/LocalPackageReferences || true
@@ -164,9 +153,9 @@ $MSBUILD_OUT=dotnet pack $args[0] -o $LocalPackageRefPath -v detailed --configur
 $PARSE_MODE=0
 
 function TryInstall {
-    param([string] $PackageName)
+    param([string] $PackageName, [bool] $IsNew)
     if ($PackageName.EndsWith(".nupkg") -And (Test-Path -Path $PackageName)) {
-        installPackage -Package $PackageName
+        installPackage -Package $PackageName -IsNew $IsNew
     }
 }
 
@@ -192,7 +181,7 @@ foreach($line in $MSBUILD_OUT) {
         }
         3 {
             if ($line.StartsWith("        ")) {
-                TryInstall -PackageName $line.TrimStart()
+                TryInstall -PackageName $line.TrimStart() -IsNew $false
             } else {
                 $PARSE_MODE=0
             }
@@ -204,7 +193,7 @@ foreach($line in $MSBUILD_OUT) {
             if ($line.StartsWith("        ")) {
                 $PACKAGE_SUCCESS = $line | Select-String -Pattern ".*? (`"|')(?<SuccessPackage>.*\.nupkg)(`"|').*?`."
                 if ($PACKAGE_SUCCESS) {
-                    TryInstall -PackageName $PACKAGE_SUCCESS.Matches.Groups[3].Value
+                    TryInstall -PackageName $PACKAGE_SUCCESS.Matches.Groups[3].Value -IsNew $true
                 }
             } else {
                 $PARSE_MODE=0

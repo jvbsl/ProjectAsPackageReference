@@ -43,11 +43,19 @@ patchVersion() {
 
 installPackage() {
     PACKAGE="$1"
+    IS_NEW="$2"
     PACKAGE_FULLNAME=$(basename "$PACKAGE")
     PACKAGE_FULLNAME="${PACKAGE_FULLNAME%.nupkg}"
     PACKAGE_VERSION=$(echo "$PACKAGE_FULLNAME" | grep -oP '[0-9](.[0-9])*(\-.*)*')
     PACKAGE_NAME=${PACKAGE_FULLNAME%\.${PACKAGE_VERSION}}
-    PACKAGE_HASH=$(openssl dgst -binary -sha512 "$PACKAGE" | openssl base64 -A)
+    PACKAGE_HASH=$(openssl dgst -binary -sha512 "/tmp/LocalPackageReferences/$PACKAGE_NAME.$PACKAGE_VERSION-packageref.nupkg" | openssl base64 -A)
+    if [ "$IS_NEW" = true ] ; then
+        patchVersion "$PACKAGE" "$PACKAGE_NAME" "$PACKAGE_VERSION"
+    else
+        patchedPath
+        $PACKAGE="$PATCHED_PACKAGE_PATH"
+        $PACKAGE_VERSION="$PACKAGE_VERSION-packageref"
+    fi
     #NEW_PACKAGE_PATH="$(dirname "$PACKAGE")/$PACKAGE_NAME.$PACKAGE_VERSION-localPackage"
     #mv "$PACKAGE" "$NEW_PACKAGE_PATH"
 
@@ -58,22 +66,6 @@ installPackage() {
     PACKAGES_DIR=$(find "$GLOBAL_PACKAGE_DIR" -maxdepth 1 -iname "$PACKAGE_NAME" 2> /dev/null || true)
 
     if [ -d "$PACKAGES_DIR" ]; then
-        PACKAGE_VERSION_DIR_PACKAGEREF=$(find "$PACKAGES_DIR" -maxdepth 1 -iname "$PACKAGE_VERSION-packageref")
-        if [ -d "$PACKAGE_VERSION_DIR_PACKAGEREF" ]; then
-            INSTALLED_PACKAGE_HASH_FILE=$(find "$PACKAGE_VERSION_DIR_PACKAGEREF" -maxdepth 1 -iname "$PACKAGE_NAME.$PACKAGE_VERSION-packageref.nupkg.sha512")
-            
-            INSTALLED_PACKAGE_HASH=$(cat "$INSTALLED_PACKAGE_HASH_FILE" 2> /dev/null || echo "")
-            
-            if [ "$INSTALLED_PACKAGE_HASH" != "$PACKAGE_HASH" ]; then
-                rm -rf "$PACKAGE_VERSION_DIR_PACKAGEREF"
-            else
-                patchedPath
-                PACKAGE="$PATCHED_PACKAGE_PATH"
-                PACKAGE_VERSION="$PACKAGE_VERSION-packageref"
-                echoResult
-                return
-            fi
-        fi
         PACKAGE_VERSION_DIR=$(find "$PACKAGES_DIR" -maxdepth 1 -iname "$PACKAGE_VERSION")
         if [ -d "$PACKAGE_VERSION_DIR" ]; then
             INSTALLED_PACKAGE_HASH_FILE=$(find "$PACKAGE_VERSION_DIR" -maxdepth 1 -iname "$PACKAGE_NAME.$PACKAGE_VERSION.nupkg.sha512")
@@ -82,13 +74,9 @@ installPackage() {
             
             if [ "$INSTALLED_PACKAGE_HASH" != "$PACKAGE_HASH" ]; then
                 rm -rf "$PACKAGE_VERSION_DIR"
-            else
-                echoResult
-                return
             fi
         fi
     fi
-    patchVersion "$PACKAGE" "$PACKAGE_NAME" "$PACKAGE_VERSION"
     echoResult
 }
 
